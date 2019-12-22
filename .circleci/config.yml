@@ -5,7 +5,7 @@ jobs:
       - image: circleci/golang:1.13.3
       - image: circleci/mysql:5.7
 
-    working_directory: /go/src/github.com/yourname/circleci-sample
+    #working_directory: /go/src/github.com/circleci-book/go-sample
 
     steps:
       - checkout
