@@ -1,0 +1,22 @@
+version: "3"
+services:
+  db:
+    image: circleci/mysql:5.7
+    environment:
+      MYSQL_DATABASE: dev_db
+    volumes:
+      - ./tmp/db:/var/lib/mysql
+    ports:
+      - "3306:3306"
+  app:
+    build: .
+    environment:
+      DATABASE_URL: "root@tcp(db:3306)/dev_db"
+      GIN_MODE: debug
+    volumes:
+      - .:/go/src/project
+      - ./mod:/go/pkg/mod
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db

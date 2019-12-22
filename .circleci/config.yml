@@ -1,0 +1,69 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.13.3
+      - image: circleci/mysql:5.7
+
+    working_directory: /go/src/github.com/yourname/circleci-sample
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - go-module-v2-{{ checksum "go.sum" }}
+            - go-module-v2-
+
+      - run:
+          name: 依存関係のインストール
+          command: |
+            go mod download -json
+
+      - save_cache:
+          key: go-module-v2-{{ checksum "go.sum" }}
+          paths:
+            - /go/pkg/mod
+
+      - run:
+          name: 静的解析、テスト結果ファイルを出力するフォルダを作成
+          command: |
+            mkdir -p /tmp/test-results/go-test
+            mkdir -p /tmp/test-results/golangci-lint
+
+      - run:
+          name: 静的解析を実行
+          command: |
+            curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+            ./bin/golangci-lint run --out-format junit-xml > /tmp/test-results/golangci-lint/result.xml
+
+      - run:
+          name: データベースの起動を待機
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 3306 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for DB && exit 1
+
+      - run:
+          name: go-junit-reportをインストール
+          command: |
+            go get github.com/jstemmer/go-junit-report
+
+      - run:
+          name: テストを実行
+          environment:
+            DATABASE_URL: "root@(localhost:3306)/circle_test"
+            GIN_MODE: test
+          command: |
+            go test -v ./... 2>&1 | tee /dev/stderr | go-junit-report > /tmp/test-results/go-test/result.xml
+
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results
