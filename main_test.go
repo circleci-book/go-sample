@@ -17,7 +17,7 @@ func TestHelloWorld(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, 200, w.Code)
-	assert.Equal(t, "{\"message\":\"HelloWorld\"}", w.Body.String())
+	assert.Equal(t, "{\"message\":\"Hello World\"}", w.Body.String())
 }
 
 func TestFetchAllProducts(t *testing.T) {
